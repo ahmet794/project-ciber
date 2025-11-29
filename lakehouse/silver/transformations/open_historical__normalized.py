@@ -1,6 +1,6 @@
 # Databricks notebook source
 source_table = 'bronze_ciber.alpaca_historical_bars.open'
-destination_table = 'silver_ciber.historical_market.open_historical'
+destination_table = 'silver_ciber.historical_market__normalized.open_historical'
 
 # COMMAND ----------
 
@@ -15,7 +15,7 @@ open = spark.sql(
         o.OPEN.h AS h,
         o.OPEN.l AS l,
         o.OPEN.c AS c,
-        bronze_timestamp
+        o.bronze_timestamp
     FROM
         {source_table} AS o
     '''
@@ -34,7 +34,8 @@ normalized_open = spark.sql(f'''
         CAST(o.v AS BIGINT)          AS share_volume,
         CAST(o.vw AS DECIMAL(10,2))  AS volume_weighted_average_price,
         CAST(o.n AS BIGINT)          AS number_of_trades,
-        CAST(o.t AS DATE)            AS trading_date
+        CAST(o.t AS DATE)            AS trading_date,
+        o.bronze_timestamp
     FROM
         open AS o
 ''')
@@ -43,8 +44,4 @@ normalized_open.createOrReplaceTempView('normalized_open')
 
 # COMMAND ----------
 
-spark.sql(f'''
-    INSERT OVERWRITE TABLE {destination_table}
-    BY NAME
-    SELECT * FROM normalized_open
-''')
+normalized_open.write.mode('overwrite').saveAsTable(destination_table)
