@@ -41,7 +41,9 @@ data = response.json().get("bars", [])
 
 df = pd.DataFrame(data)
 
+df["bronze_timestamp"] = datetime.now()
+
 # COMMAND ----------
 
 spark_df = spark.createDataFrame(df)
-spark_df.write.mode("overwrite").format("delta").saveAsTable("bronze_ciber.alpaca_historical_bars.open")
+spark_df.write.mode("overwrite").option("overwriteSchema", "true").format("delta").saveAsTable("bronze_ciber.alpaca_historical_bars.open")
